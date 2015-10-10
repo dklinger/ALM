@@ -20,7 +20,7 @@ $drive = $driveLetter + ":"
 
 if (-Not(test-path $drive)) 
 { 
-    $net.mapnetworkdrive($drive, $networkShare, $true, $username, $password) 
+    $net.mapnetworkdrive($drive, $networkShare, $true, $networkShareUsername, $networkSharePassword) 
 }
 
 Get-ChildItem –path $pathOfLocalFiles -Recurse -Filter $filterCondition | 
