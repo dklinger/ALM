@@ -12,7 +12,7 @@ param(
         [Parameter(Mandatory=$true,ValueFromPipeline=$True)]
         [string]$driveLetter,
         [Parameter(Mandatory=$false,ValueFromPipeline=$True)]
-        [bool]$disconnectNetworkDrive
+        [switch]$disconnectNetworkDrive
 )
 
 $net = New-Object -com WScript.Network
