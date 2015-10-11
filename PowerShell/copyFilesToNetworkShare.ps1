@@ -12,6 +12,8 @@ param(
         [Parameter(Mandatory=$true,ValueFromPipeline=$True)]
         [string]$driveLetter,
         [Parameter(Mandatory=$false,ValueFromPipeline=$True)]
+        [string]$networkShareFolder,
+        [Parameter(Mandatory=$false,ValueFromPipeline=$True)]
         [switch]$disconnectNetworkDrive
 )
 
@@ -20,11 +22,11 @@ $drive = $driveLetter + ":"
 
 if (-Not(test-path $drive)) 
 { 
-    $net.mapnetworkdrive($drive, $networkShare, $true, $networkShareUsername, $networkSharePassword) 
+    $net.mapnetworkdrive($drive, $networkShare, $false, $networkShareUsername, $networkSharePassword) 
 }
 
 Get-ChildItem –path $pathOfLocalFiles -Recurse -Filter $filterCondition | 
-Foreach-Object  { copy-item -Path $_.fullname -Destination $networkShare }
+Foreach-Object  { copy-item -Path $_.fullname -Destination $networkShare$networkShareFolder }
 
 if($disconnectNetworkDrive)
 {
