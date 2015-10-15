@@ -41,16 +41,28 @@ Function Restore([bool]$askForCredentials)
     $dbRestore.Database = $dbname
     $dbRestore.Devices.AddDevice($backupPath, "File")
 
+    #Get Default Paths for Data- and Log-Files
+    $dataLoc = $sqlServer.Settings.DefaultFile
+	$logLoc = $sqlServer.Settings.DefaultLog
+	if ($dataLoc.Length -eq 0) 
+    {
+	    $dataLoc = $sqlServer.Information.MasterDBPath
+    }
+	if ($logLoc.Length -eq 0) 
+    {
+        $logLoc = $sqlServer.Information.MasterDBLogPath
+	}
+
     # Set the databse file location
     $dbRestoreFile = new-object("Microsoft.SqlServer.Management.Smo.RelocateFile")
     $dbRestoreLog = new-object("Microsoft.SqlServer.Management.Smo.RelocateFile")
     $dbRestoreFile.LogicalFileName = "mscrm"
-    $dbRestoreFile.PhysicalFileName = $sqlServer.Information.MasterDBPath + "\" + $dbRestore.Database + "_Data.mdf"
+    $dbRestoreFile.PhysicalFileName = $dataLoc + "\" + $dbRestore.Database + ".mdf"
     $dbRestoreLog.LogicalFileName = "mscrm" + "_Log"
-    $dbRestoreLog.PhysicalFileName = $sqlServer.Information.MasterDBLogPath + "\" + $dbRestore.Database + "_Log.ldf"
+    $dbRestoreLog.PhysicalFileName = $logLoc + "\" + $dbRestore.Database + ".ldf"
     $dbRestore.RelocateFiles.Add($dbRestoreFile)
     $dbRestore.RelocateFiles.Add($dbRestoreLog)
-
+    
     # Call the SqlRestore mathod to complete restore database 
     try
     {
@@ -75,8 +87,14 @@ Function Restore([bool]$askForCredentials)
     return $true
 }
 
-$loginSuccessful = Restore
-while($loginSuccessful -eq $false)
-{
-    $loginSuccessful = Restore $true
+if (Get-Module -ListAvailable -Name sqlps) {
+    $loginSuccessful = Restore
+    while($loginSuccessful -eq $false)
+    {
+        $loginSuccessful = Restore $true
+    }
+} else {
+    throw "Module sqlps is not installed."
 }
+
+return $loginSuccessful
