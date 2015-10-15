@@ -11,15 +11,12 @@ $cred = New-Object System.Management.Automation.PSCredential ("dev\administrator
 if (-not (Get-PSSnapin -Name Microsoft.Xrm.Tooling.Connector -Registered -ErrorAction SilentlyContinue))
 {
     If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-
     {   
-    $arguments = "& '" + $myinvocation.mycommand.definition + "'"
-    Start-Process powershell -Verb runAs -ArgumentList $arguments
-    Break
+        #"No Administrative rights, it will display a popup window asking user for Admin rights"
+        $arguments = "& cd $pwd\sdk-bin`";.\RegisterXRMTooling.ps1;"
+        $arguments
+        Start-Process "$psHome\powershell.exe" -Verb runAs -ArgumentList $arguments -Wait
     }
-    cd .\sdk-bin
-    ./RegisterXRMTooling.ps1
-    
 }
 
 if (-not (Get-PSSnapin -Name Microsoft.Xrm.Tooling.Connector -ErrorAction SilentlyContinue))
