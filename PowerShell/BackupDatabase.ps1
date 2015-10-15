@@ -7,7 +7,7 @@
         [string]$backupFileName
 )
 
-Function Restore([bool]$askForCredentials)
+Function Backup([bool]$askForCredentials)
 {
     #Load the required assemlies SMO and SmoExtended.
     [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") | Out-Null
@@ -72,13 +72,14 @@ Function Restore([bool]$askForCredentials)
     return $true
 }
 
-
 if (Get-Module -ListAvailable -Name sqlps) {
-    $loginSuccessful = Restore
+    $loginSuccessful = Backup
     while($loginSuccessful -eq $false)
     {
-        $loginSuccessful = Restore $true
+        $loginSuccessful = Backup $true
     }
 } else {
     throw "Module sqlps is not installed."
 }
+
+return $loginSuccessful
