@@ -27,7 +27,7 @@ Function Restore([bool]$askForCredentials)
     {
         $sqlServer.ConnectionContext.LoginSecure = $false 
         $sqlServer.ConnectionContext.Login = "sa"
-        $sqlServer.ConnectionContext.Password = "Ts08mx"
+        $sqlServer.ConnectionContext.Password = "Ts08mX#"
     }
 
     # Get Instance backup directory
