@@ -8,6 +8,20 @@ $dbName = $newOrgName + "_MSCRM"
 $secpasswd = ConvertTo-SecureString "Ts08mX#" -AsPlainText -Force
 $cred = New-Object System.Management.Automation.PSCredential ("dev\administrator", $secpasswd)
 
+if (-not (Get-PSSnapin -Name Microsoft.Xrm.Tooling.Connector -Registered -ErrorAction SilentlyContinue))
+{
+    If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+
+    {   
+    $arguments = "& '" + $myinvocation.mycommand.definition + "'"
+    Start-Process powershell -Verb runAs -ArgumentList $arguments
+    Break
+    }
+    cd .\sdk-bin
+    ./RegisterXRMTooling.ps1
+    
+}
+
 if (-not (Get-PSSnapin -Name Microsoft.Xrm.Tooling.Connector -ErrorAction SilentlyContinue))
 {
     Add-PSSnapin Microsoft.Xrm.Tooling.Connector
