@@ -1,43 +1,51 @@
 ﻿param(
     [Parameter(Mandatory=$true,ValueFromPipeline=$True)]
-    [string]$newOrgName
+    [string]$serverUrl,
+    [Parameter(Mandatory=$true,ValueFromPipeline=$True)]
+    [string]$newOrgName,    
+    [Parameter(Mandatory=$false,ValueFromPipeline=$True)]
+    [string]$baseOrgName
 )
-
-.\CheckAndInstallRequirements.ps1
-
-$dbName = $newOrgName + "_MSCRM"
-
-$secpasswd = ConvertTo-SecureString "Ts08mX#" -AsPlainText -Force
-$cred = New-Object System.Management.Automation.PSCredential ("dev\administrator", $secpasswd)
-
-if (-not (Get-PSSnapin -Name Microsoft.Xrm.Tooling.Connector -ErrorAction SilentlyContinue))
-{
-    Add-PSSnapin Microsoft.Xrm.Tooling.Connector
-    $RemoveSnapInWhenDone = $True
-}
-
-$backup = $false;
-$restore = $false;
-$import = $false;
 
 try
 {
-    $conn = Get-CrmConnection -InteractiveMode
-    $uri = ([System.Uri]$conn.ConnectedOrgPublishedEndpoints["WebApplication"])
-    $serverUrl = $uri.Scheme + "://" + $uri.DnsSafeHost
+    $almServer = "vsdev-vogel2015.dev.gc"
 
-    $orgSqlInstanceAndDbName = .\GetOrganizationDetailsFromDeploymentServer.ps1 $serverUrl $conn.ConnectedOrgUniqueName $cred
-    
-    $sqlInstsance = $orgSqlInstanceAndDbName[0]
+    .\CheckAndInstallRequirements.ps1
+    $newOrgName = .\EnforceBranchAndOrgNamingConvenctions.ps1 $newOrgName
+
+    $dbName = $newOrgName + "_MSCRM"
+
+    $secpasswd = ConvertTo-SecureString "nmidopf" -AsPlainText -Force
+    $cred = New-Object System.Management.Automation.PSCredential ("dev\_svc-almCrmDeploy", $secpasswd)
+
+    if (-not (Get-PSSnapin -Name Microsoft.Xrm.Tooling.Connector -ErrorAction SilentlyContinue))
+    {
+        Add-PSSnapin Microsoft.Xrm.Tooling.Connector
+        $RemoveSnapInWhenDone = $True
+    }
+
+    $backup = $false;
+    $restore = $false;
+    $import = $false;
+
+    #$conn = Get-CrmConnection -InteractiveMode
+    #$conn.ConnectedOrgPublishedEndpoints["WebApplication"]
+    #$uri = ([System.Uri]$conn.ConnectedOrgPublishedEndpoints["WebApplication"])
+    #$serverUrl = $uri.Scheme + "://" + $uri.DnsSafeHost
+
+    $orgSqlInstanceAndDbName = .\GetOrganizationDetailsFromDeploymentServer.ps1 $serverUrl $baseOrgName $almServer $cred
+    $orgSqlInstanceAndDbName
+    $sqlInstance = $orgSqlInstanceAndDbName[0]
     $orgname = $orgSqlInstanceAndDbName[1]
     $srsUrl = $orgSqlInstanceAndDbName[2]
 
 
-    $backup = .\BackupDatabase.ps1 $sqlInstsance $orgname ($orgname + "_" + [system.environment]::MachineName + ".bak")
+    $backup = .\BackupDatabase.ps1 $sqlInstance $orgname ($orgname + "_" + [system.environment]::MachineName + ".bak")
     
-    $restore = .\RestoreCrmDatabase.ps1 $sqlInstsance $dbName ($orgname + "_" + [system.environment]::MachineName + ".bak")
+    $restore = .\RestoreCrmDatabase.ps1 $sqlInstance $dbName ($orgname + "_" + [system.environment]::MachineName + ".bak")
     
-    $import = .\ImportOrg.ps1 $sqlInstsance $dbName $srsUrl $newOrgName $serverUrl vsdev-vogel2015.dev.gc $cred
+    $import = .\ImportOrg.ps1 $sqlInstance $dbName $srsUrl $newOrgName $serverUrl $almServer $cred
     
 }
 catch
@@ -49,6 +57,7 @@ catch
         Write-Host "Delete Restored DB"
         #TODO: Delete Restored DB
     }
+    Read-Host -Prompt "Press Enter to exit"
 }
 finally
 {
@@ -60,11 +69,21 @@ finally
     
     if($backup -eq $true -and $restore -eq $true -and $import -eq $true)
     {
-        Write-Host "Org successfully copied:"$server"/"$orgname" =>"$server"/"$newOrgName
-        Start-Process -FilePath ($server + "/" + $newOrgName)
+        Start-Sleep -s 5
+        Write-Host "Waiting for Organization activation..."
+        $newOrgDetails = .\GetOrganizationDetailsFromDeploymentServer.ps1 $serverUrl $newOrgName $almServer $cred
+        while(-Not($newOrgDetails[3].ToString() -eq "Enabled"))
+        {
+            Write-Host "Checked State. State is:"$newOrgDetails[3]
+            Start-Sleep -s 3
+            $newOrgDetails = .\GetOrganizationDetailsFromDeploymentServer.ps1 $serverUrl $newOrgName $almServer $cred
+        }
+        Write-Host "Org successfully copied:"$serverUrl"/"$orgname" =>"$serverUrl"/"$newOrgName
+        Start-Process -FilePath ($serverUrl + "/" + $newOrgName)
     }
-}
-if($RemoveSnapInWhenDone)
-{
-    Remove-PSSnapin Microsoft.Xrm.Tooling.Connector
+
+    if($RemoveSnapInWhenDone)
+    {
+        Remove-PSSnapin Microsoft.Xrm.Tooling.Connector
+    }
 }
