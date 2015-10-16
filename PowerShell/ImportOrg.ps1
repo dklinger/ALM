@@ -15,7 +15,7 @@
         [PSCredential]$cred
 )
 
-$session = New-PSSession -credential $cred -ComputerName $almServer
+$session = New-PSSession -credential $cred -ComputerName $almServer -Authentication Negotiate
 $result = Invoke-Command -session $session -ScriptBlock { 
     param(
         [Parameter(Mandatory=$true,ValueFromPipeline=$True)]
@@ -38,7 +38,7 @@ $result = Invoke-Command -session $session -ScriptBlock {
         $RemoveSnapInWhenDone = $True
     }
 
-    Import-CrmOrganization $sqlName $dbname $srsUrl $displayName $orgName "KeepExisting" -Credential $cred -DwsServerUrl $serverUrl
+    Import-CrmOrganization $sqlName $dbname $srsUrl $orgName $orgName "KeepExisting" -Credential $cred -DwsServerUrl $serverUrl
 
     if($RemoveSnapInWhenDone)
     {
